@@ -30,20 +30,119 @@ const CONFIG = {
 
 // ==================== GAME STATE ====================
 const GAME_STATES = {
+    CHARACTER_SELECT: 'characterSelect',
     START: 'start',
     PLAYING: 'playing',
     GAME_OVER: 'gameOver',
     WIN: 'win'
 };
 
+// ==================== PRESIDENT CHARACTER DATA ====================
+const PRESIDENTS = [
+    {
+        id: 'biden',
+        name: 'Joe Biden',
+        years: '2021-Present',
+        hair: '#C0C0C0',      // Silver/gray
+        face: '#FFE4C4',
+        suit: '#000080',       // Navy blue
+        tie: '#DC143C'         // Red
+    },
+    {
+        id: 'trump',
+        name: 'Donald Trump',
+        years: '2017-2021',
+        hair: '#FFD700',       // Blonde/gold
+        face: '#FFA07A',       // Orange-ish
+        suit: '#1C1C1C',       // Dark suit
+        tie: '#DC143C'         // Red
+    },
+    {
+        id: 'obama',
+        name: 'Barack Obama',
+        years: '2009-2017',
+        hair: '#2C1810',       // Dark brown/black
+        face: '#8B6F47',       // Brown
+        suit: '#1C1C1C',
+        tie: '#0000FF'         // Blue
+    },
+    {
+        id: 'bush-w',
+        name: 'George W. Bush',
+        years: '2001-2009',
+        hair: '#8B7355',       // Gray-brown
+        face: '#FFE4C4',
+        suit: '#1C1C1C',
+        tie: '#DC143C'
+    },
+    {
+        id: 'clinton',
+        name: 'Bill Clinton',
+        years: '1993-2001',
+        hair: '#C0C0C0',       // Gray
+        face: '#FFE4C4',
+        suit: '#000080',
+        tie: '#DC143C'
+    },
+    {
+        id: 'bush-hw',
+        name: 'George H.W. Bush',
+        years: '1989-1993',
+        hair: '#A9A9A9',       // Gray
+        face: '#FFE4C4',
+        suit: '#1C1C1C',
+        tie: '#DC143C'
+    },
+    {
+        id: 'reagan',
+        name: 'Ronald Reagan',
+        years: '1981-1989',
+        hair: '#4B3621',       // Dark brown
+        face: '#FFE4C4',
+        suit: '#1C1C1C',
+        tie: '#DC143C'
+    },
+    {
+        id: 'carter',
+        name: 'Jimmy Carter',
+        years: '1977-1981',
+        hair: '#A9A9A9',       // Gray
+        face: '#FFE4C4',
+        suit: '#000080',
+        tie: '#8B0000'         // Dark red
+    },
+    {
+        id: 'ford',
+        name: 'Gerald Ford',
+        years: '1974-1977',
+        hair: '#8B7355',       // Gray-brown
+        face: '#FFE4C4',
+        suit: '#1C1C1C',
+        tie: '#0000FF'
+    },
+    {
+        id: 'nixon',
+        name: 'Richard Nixon',
+        years: '1969-1974',
+        hair: '#2C1810',       // Dark
+        face: '#FFE4C4',
+        suit: '#1C1C1C',
+        tie: '#DC143C'
+    }
+];
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.state = GAME_STATES.START;
+        this.state = GAME_STATES.CHARACTER_SELECT;
         this.score = 0;
         this.lives = 3;
         this.camera = { x: 0, y: 0 };
+
+        // Character selection
+        this.selectedCharacterIndex = 1; // Default to Trump (index 1)
+        this.selectedCharacter = PRESIDENTS[this.selectedCharacterIndex];
 
         this.keys = {};
         this.setupEventListeners();
@@ -62,7 +161,25 @@ class Game {
         document.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
 
-            if (e.code === 'Space') {
+            // Character selection controls
+            if (this.state === GAME_STATES.CHARACTER_SELECT) {
+                if (e.code === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.selectedCharacterIndex = (this.selectedCharacterIndex - 1 + PRESIDENTS.length) % PRESIDENTS.length;
+                    this.selectedCharacter = PRESIDENTS[this.selectedCharacterIndex];
+                }
+                if (e.code === 'ArrowRight') {
+                    e.preventDefault();
+                    this.selectedCharacterIndex = (this.selectedCharacterIndex + 1) % PRESIDENTS.length;
+                    this.selectedCharacter = PRESIDENTS[this.selectedCharacterIndex];
+                }
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    this.state = GAME_STATES.START;
+                }
+            }
+            // Game controls
+            else if (e.code === 'Space') {
                 e.preventDefault();
                 if (this.state === GAME_STATES.START) {
                     this.startGame();
@@ -82,8 +199,8 @@ class Game {
     }
 
     initializeLevel() {
-        // Create player
-        this.player = new Player(100, 400);
+        // Create player with selected character
+        this.player = new Player(100, 400, this.selectedCharacter);
 
         // Create ground platforms
         this.platforms = [
@@ -173,7 +290,7 @@ class Game {
     }
 
     restart() {
-        this.state = GAME_STATES.START;
+        this.state = GAME_STATES.CHARACTER_SELECT;
         this.score = 0;
         this.lives = 3;
         this.camera = { x: 0, y: 0 };
@@ -325,7 +442,9 @@ class Game {
         }
 
         // Draw screens
-        if (this.state === GAME_STATES.START) {
+        if (this.state === GAME_STATES.CHARACTER_SELECT) {
+            this.drawCharacterSelectScreen();
+        } else if (this.state === GAME_STATES.START) {
             this.drawStartScreen();
         } else if (this.state === GAME_STATES.GAME_OVER) {
             this.drawGameOverScreen();
@@ -405,6 +524,126 @@ class Game {
         }
     }
 
+    drawCharacterSelectScreen() {
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+
+        this.ctx.fillStyle = '#FFD700';
+        this.ctx.font = 'bold 48px "Courier New"';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('SELECT YOUR PRESIDENT', CONFIG.canvas.width / 2, 80);
+
+        // Draw character preview cards
+        const cardWidth = 180;
+        const cardHeight = 280;
+        const startX = CONFIG.canvas.width / 2 - cardWidth - 120;
+        const cardY = 140;
+
+        // Draw 3 cards: previous, current (selected), next
+        for (let i = -1; i <= 1; i++) {
+            const index = (this.selectedCharacterIndex + i + PRESIDENTS.length) % PRESIDENTS.length;
+            const president = PRESIDENTS[index];
+            const x = startX + (i + 1) * (cardWidth + 40);
+            const isSelected = i === 0;
+            const scale = isSelected ? 1 : 0.8;
+            const cardH = cardHeight * scale;
+            const cardW = cardWidth * scale;
+            const yOffset = isSelected ? 0 : 20;
+
+            // Card background
+            this.ctx.fillStyle = isSelected ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+            this.ctx.fillRect(x - (cardW - cardWidth) / 2, cardY + yOffset, cardW, cardH);
+
+            // Card border
+            this.ctx.strokeStyle = isSelected ? '#FFD700' : '#666666';
+            this.ctx.lineWidth = isSelected ? 4 : 2;
+            this.ctx.strokeRect(x - (cardW - cardWidth) / 2, cardY + yOffset, cardW, cardH);
+
+            // Draw mini character preview
+            const charX = x + cardWidth / 2 - 32;
+            const charY = cardY + yOffset + 40;
+            this.drawMiniCharacter(charX, charY, president, scale);
+
+            // President info
+            this.ctx.fillStyle = isSelected ? '#FFD700' : '#CCCCCC';
+            this.ctx.font = isSelected ? 'bold 20px "Courier New"' : 'bold 16px "Courier New"';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(president.name, x + cardWidth / 2, cardY + yOffset + 180);
+
+            this.ctx.fillStyle = isSelected ? '#FFFFFF' : '#999999';
+            this.ctx.font = isSelected ? '16px "Courier New"' : '14px "Courier New"';
+            this.ctx.fillText(president.years, x + cardWidth / 2, cardY + yOffset + 210);
+        }
+
+        // Instructions
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.font = 'bold 24px "Courier New"';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('← → to Select', CONFIG.canvas.width / 2, 480);
+
+        this.ctx.fillStyle = '#FFD700';
+        this.ctx.font = 'bold 28px "Courier New"';
+        this.ctx.fillText('SPACE to Confirm', CONFIG.canvas.width / 2, 530);
+
+        this.ctx.textAlign = 'left';
+    }
+
+    drawMiniCharacter(x, y, president, scale = 1) {
+        this.ctx.save();
+        this.ctx.translate(x, y);
+        if (scale !== 1) {
+            this.ctx.scale(scale, scale);
+        }
+
+        // Hair
+        this.ctx.fillStyle = president.hair;
+        this.ctx.fillRect(4, 2, 24, 8);
+        this.ctx.fillRect(0, 4, 6, 6);
+
+        // Face
+        this.ctx.fillStyle = president.face;
+        this.ctx.fillRect(8, 8, 16, 12);
+
+        // Eyes
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(10, 12, 3, 3);
+        this.ctx.fillRect(19, 12, 3, 3);
+
+        // Suit
+        this.ctx.fillStyle = president.suit;
+        this.ctx.fillRect(6, 20, 20, 16);
+
+        // Shirt
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillRect(14, 22, 4, 8);
+
+        // Tie
+        this.ctx.fillStyle = president.tie;
+        this.ctx.fillRect(14, 24, 4, 10);
+
+        // Arms
+        this.ctx.fillStyle = president.suit;
+        this.ctx.fillRect(2, 22, 4, 10);
+        this.ctx.fillRect(26, 22, 4, 10);
+
+        // Hands
+        this.ctx.fillStyle = president.face;
+        this.ctx.fillRect(2, 30, 4, 4);
+        this.ctx.fillRect(26, 30, 4, 4);
+
+        // Legs
+        this.ctx.fillStyle = president.suit;
+        this.ctx.fillRect(10, 36, 5, 12);
+        this.ctx.fillRect(17, 36, 5, 12);
+
+        // Shoes
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(9, 46, 6, 4);
+        this.ctx.fillRect(17, 46, 6, 4);
+
+        this.ctx.restore();
+    }
+
     drawStartScreen() {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         this.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
@@ -416,7 +655,7 @@ class Game {
 
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = 'bold 24px "Courier New"';
-        this.ctx.fillText('Help Trump reach the White House!', CONFIG.canvas.width / 2, 280);
+        this.ctx.fillText(`Help ${this.selectedCharacter.name} reach the White House!`, CONFIG.canvas.width / 2, 280);
 
         this.ctx.fillStyle = '#FFD700';
         this.ctx.font = 'bold 20px "Courier New"';
@@ -482,7 +721,7 @@ class Game {
 
 // ==================== PLAYER CLASS ====================
 class Player {
-    constructor(x, y) {
+    constructor(x, y, character) {
         this.x = x;
         this.y = y;
         this.width = CONFIG.player.width;
@@ -493,6 +732,7 @@ class Player {
         this.direction = 1; // 1 for right, -1 for left
         this.animationFrame = 0;
         this.animationTimer = 0;
+        this.character = character || PRESIDENTS[1]; // Default to Trump if not specified
     }
 
     update(keys, platforms) {
@@ -563,7 +803,7 @@ class Player {
     }
 
     draw(ctx) {
-        // Draw 8-bit Trump character
+        // Draw 8-bit president character
         ctx.save();
 
         // Flip context if facing left
@@ -574,13 +814,13 @@ class Player {
             ctx.translate(this.x, this.y);
         }
 
-        // Hair (blonde)
-        ctx.fillStyle = '#FFD700';
+        // Hair
+        ctx.fillStyle = this.character.hair;
         ctx.fillRect(4, 2, 24, 8);
         ctx.fillRect(0, 4, 6, 6);
 
-        // Face (orange-ish)
-        ctx.fillStyle = '#FFA07A';
+        // Face
+        ctx.fillStyle = this.character.face;
         ctx.fillRect(8, 8, 16, 12);
 
         // Eyes
@@ -588,30 +828,30 @@ class Player {
         ctx.fillRect(10, 12, 3, 3);
         ctx.fillRect(19, 12, 3, 3);
 
-        // Suit (dark)
-        ctx.fillStyle = '#1C1C1C';
+        // Suit
+        ctx.fillStyle = this.character.suit;
         ctx.fillRect(6, 20, 20, 16);
 
         // Shirt (white)
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(14, 22, 4, 8);
 
-        // Tie (red)
-        ctx.fillStyle = '#DC143C';
+        // Tie
+        ctx.fillStyle = this.character.tie;
         ctx.fillRect(14, 24, 4, 10);
 
         // Arms
-        ctx.fillStyle = '#1C1C1C';
+        ctx.fillStyle = this.character.suit;
         ctx.fillRect(2, 22, 4, 10);
         ctx.fillRect(26, 22, 4, 10);
 
         // Hands
-        ctx.fillStyle = '#FFA07A';
+        ctx.fillStyle = this.character.face;
         ctx.fillRect(2, 30, 4, 4);
         ctx.fillRect(26, 30, 4, 4);
 
         // Legs
-        ctx.fillStyle = '#1C1C1C';
+        ctx.fillStyle = this.character.suit;
         const legOffset = this.animationFrame % 2 === 0 ? 0 : 2;
         ctx.fillRect(10, 36, 5, 12 - legOffset);
         ctx.fillRect(17, 36, 5, 12 + legOffset);
