@@ -782,4 +782,186 @@ class Obstacle {
 let game;
 window.addEventListener('load', () => {
     game = new Game();
+    initDebugPanel();
 });
+
+// ==================== DEBUG PANEL ====================
+const DEFAULT_VALUES = {
+    playerSpeed: 5,
+    jumpForce: 12,
+    gravity: 0.5,
+    maxFallSpeed: 15,
+    playerWidth: 32,
+    playerHeight: 32,
+    enemySpeed: 2
+};
+
+function initDebugPanel() {
+    const debugPanel = document.getElementById('debugPanel');
+    const debugToggle = document.getElementById('debugToggle');
+    const debugClose = document.getElementById('debugClose');
+    const copyBtn = document.getElementById('copyValues');
+    const resetBtn = document.getElementById('resetValues');
+    const debugValues = document.getElementById('debugValues');
+
+    // Toggle debug panel with button
+    debugToggle.addEventListener('click', () => {
+        debugPanel.classList.toggle('hidden');
+    });
+
+    // Close debug panel
+    debugClose.addEventListener('click', () => {
+        debugPanel.classList.add('hidden');
+    });
+
+    // Keyboard shortcut - D key
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyD' && !e.repeat) {
+            debugPanel.classList.toggle('hidden');
+        }
+    });
+
+    // Setup all the sliders
+    setupSlider('playerSpeed', 'playerSpeedValue', (value) => {
+        CONFIG.player.speed = value;
+    });
+
+    setupSlider('jumpForce', 'jumpForceValue', (value) => {
+        CONFIG.player.jumpForce = value;
+    });
+
+    setupSlider('gravity', 'gravityValue', (value) => {
+        CONFIG.player.gravity = value;
+    });
+
+    setupSlider('maxFallSpeed', 'maxFallSpeedValue', (value) => {
+        CONFIG.player.maxFallSpeed = value;
+    });
+
+    setupSlider('playerWidth', 'playerWidthValue', (value) => {
+        CONFIG.player.width = value;
+        if (game.player) {
+            game.player.width = value;
+        }
+    });
+
+    setupSlider('playerHeight', 'playerHeightValue', (value) => {
+        CONFIG.player.height = value;
+        if (game.player) {
+            game.player.height = value;
+        }
+    });
+
+    setupSlider('enemySpeed', 'enemySpeedValue', (value) => {
+        CONFIG.enemy.speed = value;
+        if (game.enemies) {
+            game.enemies.forEach(enemy => {
+                enemy.speed = value;
+            });
+        }
+    });
+
+    // Update debug values display
+    updateDebugDisplay();
+
+    // Copy values to clipboard
+    copyBtn.addEventListener('click', () => {
+        const values = {
+            player: {
+                width: CONFIG.player.width,
+                height: CONFIG.player.height,
+                speed: CONFIG.player.speed,
+                jumpForce: CONFIG.player.jumpForce,
+                gravity: CONFIG.player.gravity,
+                maxFallSpeed: CONFIG.player.maxFallSpeed
+            },
+            enemy: {
+                speed: CONFIG.enemy.speed
+            }
+        };
+
+        const text = `// Optimized Physics Values
+CONFIG = {
+    player: {
+        width: ${values.player.width},
+        height: ${values.player.height},
+        speed: ${values.player.speed},
+        jumpForce: ${values.player.jumpForce},
+        gravity: ${values.player.gravity},
+        maxFallSpeed: ${values.player.maxFallSpeed}
+    },
+    enemy: {
+        speed: ${values.enemy.speed}
+    }
+};`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Values to Clipboard';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            copyBtn.textContent = 'Copy failed!';
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Values to Clipboard';
+            }, 2000);
+        });
+    });
+
+    // Reset to default values
+    resetBtn.addEventListener('click', () => {
+        document.getElementById('playerSpeed').value = DEFAULT_VALUES.playerSpeed;
+        document.getElementById('jumpForce').value = DEFAULT_VALUES.jumpForce;
+        document.getElementById('gravity').value = DEFAULT_VALUES.gravity;
+        document.getElementById('maxFallSpeed').value = DEFAULT_VALUES.maxFallSpeed;
+        document.getElementById('playerWidth').value = DEFAULT_VALUES.playerWidth;
+        document.getElementById('playerHeight').value = DEFAULT_VALUES.playerHeight;
+        document.getElementById('enemySpeed').value = DEFAULT_VALUES.enemySpeed;
+
+        // Trigger change events
+        document.getElementById('playerSpeed').dispatchEvent(new Event('input'));
+        document.getElementById('jumpForce').dispatchEvent(new Event('input'));
+        document.getElementById('gravity').dispatchEvent(new Event('input'));
+        document.getElementById('maxFallSpeed').dispatchEvent(new Event('input'));
+        document.getElementById('playerWidth').dispatchEvent(new Event('input'));
+        document.getElementById('playerHeight').dispatchEvent(new Event('input'));
+        document.getElementById('enemySpeed').dispatchEvent(new Event('input'));
+
+        resetBtn.textContent = 'Reset Complete!';
+        setTimeout(() => {
+            resetBtn.textContent = 'Reset to Defaults';
+        }, 2000);
+    });
+}
+
+function setupSlider(sliderId, valueId, callback) {
+    const slider = document.getElementById(sliderId);
+    const valueDisplay = document.getElementById(valueId);
+
+    slider.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        valueDisplay.textContent = value;
+        callback(value);
+        updateDebugDisplay();
+    });
+}
+
+function updateDebugDisplay() {
+    const debugValues = document.getElementById('debugValues');
+    const values = `
+<strong>Player Physics:</strong>
+• Speed: ${CONFIG.player.speed} px/frame
+• Jump Force: ${CONFIG.player.jumpForce}
+• Gravity: ${CONFIG.player.gravity}
+• Max Fall Speed: ${CONFIG.player.maxFallSpeed}
+• Size: ${CONFIG.player.width}x${CONFIG.player.height}px
+
+<strong>Enemy Settings:</strong>
+• Speed: ${CONFIG.enemy.speed} px/frame
+
+<strong>Tip:</strong> Use the "Copy Values" button to get formatted code to share!
+    `.trim();
+
+    debugValues.innerHTML = values;
+}

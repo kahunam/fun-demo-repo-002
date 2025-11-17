@@ -55,3 +55,217 @@ body {
 .instructions strong {
     color: white;
 }
+
+/* Debug Panel Styles */
+.debug-toggle-btn {
+    margin-top: 15px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.debug-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.debug-toggle-btn:active {
+    transform: translateY(0);
+}
+
+.debug-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    max-height: 80vh;
+    background: linear-gradient(135deg, #2d3436 0%, #1e272e 100%);
+    border: 3px solid #667eea;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+}
+
+.debug-panel.hidden {
+    display: none;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.debug-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #764ba2;
+}
+
+.debug-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5em;
+    font-family: 'Courier New', monospace;
+}
+
+.debug-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 28px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.debug-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.debug-content {
+    padding: 20px;
+    max-height: calc(80vh - 80px);
+    overflow-y: auto;
+}
+
+.debug-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.debug-content::-webkit-scrollbar-track {
+    background: #1e272e;
+}
+
+.debug-content::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 5px;
+}
+
+.debug-section {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.debug-section h3 {
+    color: #FFD700;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    font-family: 'Courier New', monospace;
+}
+
+.debug-control {
+    margin-bottom: 15px;
+}
+
+.debug-control label {
+    display: block;
+    color: #fff;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.debug-control label span {
+    color: #FFD700;
+    float: right;
+}
+
+.debug-control input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+}
+
+.debug-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.debug-control input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: none;
+}
+
+.debug-values {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #fff;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.copy-btn, .reset-btn {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #00b894 0%, #00a383 100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.copy-btn:hover, .reset-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.reset-btn {
+    background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+}
+
+.copy-btn:active, .reset-btn:active {
+    transform: translateY(0);
+}

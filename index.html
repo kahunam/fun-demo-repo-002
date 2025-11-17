@@ -11,9 +11,74 @@
         <h1 class="game-title">White House Runner</h1>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div class="instructions">
-            <p><strong>Controls:</strong> Arrow Keys = Move | Spacebar = Jump | R = Restart</p>
+            <p><strong>Controls:</strong> Arrow Keys = Move | Spacebar = Jump | R = Restart | D = Debug Panel</p>
+        </div>
+        <button id="debugToggle" class="debug-toggle-btn">Debug Panel (D)</button>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debugPanel" class="debug-panel hidden">
+        <div class="debug-header">
+            <h2>Debug Panel</h2>
+            <button id="debugClose" class="debug-close">×</button>
+        </div>
+        <div class="debug-content">
+            <div class="debug-section">
+                <h3>Player Physics</h3>
+
+                <div class="debug-control">
+                    <label for="playerSpeed">Speed: <span id="playerSpeedValue">5</span>px</label>
+                    <input type="range" id="playerSpeed" min="1" max="15" step="0.5" value="5">
+                </div>
+
+                <div class="debug-control">
+                    <label for="jumpForce">Jump Force: <span id="jumpForceValue">12</span></label>
+                    <input type="range" id="jumpForce" min="5" max="20" step="0.5" value="12">
+                </div>
+
+                <div class="debug-control">
+                    <label for="gravity">Gravity: <span id="gravityValue">0.5</span></label>
+                    <input type="range" id="gravity" min="0.1" max="2" step="0.1" value="0.5">
+                </div>
+
+                <div class="debug-control">
+                    <label for="maxFallSpeed">Max Fall Speed: <span id="maxFallSpeedValue">15</span></label>
+                    <input type="range" id="maxFallSpeed" min="5" max="30" step="1" value="15">
+                </div>
+            </div>
+
+            <div class="debug-section">
+                <h3>Player Size</h3>
+
+                <div class="debug-control">
+                    <label for="playerWidth">Width: <span id="playerWidthValue">32</span>px</label>
+                    <input type="range" id="playerWidth" min="16" max="64" step="4" value="32">
+                </div>
+
+                <div class="debug-control">
+                    <label for="playerHeight">Height: <span id="playerHeightValue">32</span>px</label>
+                    <input type="range" id="playerHeight" min="16" max="64" step="4" value="32">
+                </div>
+            </div>
+
+            <div class="debug-section">
+                <h3>Enemy Settings</h3>
+
+                <div class="debug-control">
+                    <label for="enemySpeed">Enemy Speed: <span id="enemySpeedValue">2</span>px</label>
+                    <input type="range" id="enemySpeed" min="0.5" max="8" step="0.5" value="2">
+                </div>
+            </div>
+
+            <div class="debug-section">
+                <h3>Current Values</h3>
+                <div class="debug-values" id="debugValues"></div>
+                <button id="copyValues" class="copy-btn">Copy Values to Clipboard</button>
+                <button id="resetValues" class="reset-btn">Reset to Defaults</button>
+            </div>
         </div>
     </div>
+
     <script src="game.js"></script>
 </body>
 </html>
