@@ -7,10 +7,10 @@ const CONFIG = {
     player: {
         width: 32,
         height: 32,
-        speed: 5,
-        jumpForce: 12,
-        gravity: 0.5,
-        maxFallSpeed: 15
+        speed: 7,
+        jumpForce: 15,
+        gravity: 0.8,
+        maxFallSpeed: 13
     },
     level: {
         width: 4000,
@@ -26,6 +26,11 @@ const CONFIG = {
         height: 20,
         points: 10,
         flashDuration: 60 // frames (1 second at 60fps)
+    },
+    timeBonus: {
+        maxBonus: 1000,    // Maximum time bonus
+        decreaseRate: 1,   // Points decrease per frame (at 60fps)
+        minBonus: 0        // Minimum time bonus
     },
     levels: {
         total: 3
@@ -47,19 +52,21 @@ const PRESIDENTS = [
         id: 'biden',
         name: 'Joe Biden',
         years: '2021-Present',
-        hair: '#C0C0C0',      // Silver/gray
+        hair: '#E8E8E8',      // White/very light gray (older appearance)
         face: '#FFE4C4',
         suit: '#000080',       // Navy blue
-        tie: '#DC143C'         // Red
+        tie: '#DC143C',        // Red
+        features: 'wrinkles'   // Special feature for older appearance
     },
     {
         id: 'trump',
         name: 'Donald Trump',
         years: '2017-2021',
-        hair: '#FFD700',       // Blonde/gold
+        hair: '#FFB347',       // Golden blonde
         face: '#FFA07A',       // Orange-ish
         suit: '#1C1C1C',       // Dark suit
-        tie: '#DC143C'         // Red
+        tie: '#DC143C',        // Red
+        features: 'distinctive-hair' // Special hair style
     },
     {
         id: 'obama',
@@ -144,6 +151,8 @@ class Game {
         this.lives = 3;
         this.currentLevel = 1;
         this.camera = { x: 0, y: 0 };
+        this.timeBonus = CONFIG.timeBonus.maxBonus;
+        this.levelStartTime = 0;
 
         // Character selection
         this.selectedCharacterIndex = 1; // Default to Trump (index 1)
@@ -439,6 +448,12 @@ class Game {
         this.state = GAME_STATES.PLAYING;
         this.score = 0;
         this.lives = 3;
+        this.timeBonus = CONFIG.timeBonus.maxBonus;
+        this.levelStartTime = Date.now();
+        // Update player character to match current selection
+        if (this.player) {
+            this.player.character = this.selectedCharacter;
+        }
     }
 
     restart() {
@@ -452,6 +467,14 @@ class Game {
 
     update() {
         if (this.state !== GAME_STATES.PLAYING) return;
+
+        // Update time bonus (decrease over time)
+        if (this.timeBonus > CONFIG.timeBonus.minBonus) {
+            this.timeBonus -= CONFIG.timeBonus.decreaseRate;
+            if (this.timeBonus < CONFIG.timeBonus.minBonus) {
+                this.timeBonus = CONFIG.timeBonus.minBonus;
+            }
+        }
 
         // Update player
         if (this.player) {
@@ -551,6 +574,10 @@ class Game {
 
     loseLife() {
         this.lives--;
+        // Trigger damage flash effect
+        if (this.player) {
+            this.player.damageFlash();
+        }
         if (this.lives <= 0) {
             this.gameOver();
         } else {
@@ -571,6 +598,10 @@ class Game {
         // Add level completion bonus
         this.score += 100 + (this.lives * 50);
 
+        // Add time bonus (rounded to nearest integer)
+        const timeBonusPoints = Math.round(this.timeBonus);
+        this.score += timeBonusPoints;
+
         // Check if there are more levels
         if (this.currentLevel < CONFIG.levels.total) {
             // Advance to next level
@@ -578,6 +609,9 @@ class Game {
             this.camera = { x: 0, y: 0 };
             this.initializeLevel();
             this.state = GAME_STATES.START;
+            // Reset time bonus for new level
+            this.timeBonus = CONFIG.timeBonus.maxBonus;
+            this.levelStartTime = Date.now();
         } else {
             // Game complete!
             this.state = GAME_STATES.WIN;
@@ -857,7 +891,7 @@ class Game {
 
     drawHUD() {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(0, 0, CONFIG.canvas.width, 40);
+        this.ctx.fillRect(0, 0, CONFIG.canvas.width, 70);
 
         // Level
         this.ctx.fillStyle = '#FFD700';
@@ -875,6 +909,43 @@ class Game {
             this.ctx.fillStyle = '#FF0000';
             this.ctx.fillText('♥', CONFIG.canvas.width - 100 + (i * 25), 28);
         }
+
+        // Time Bonus with decreasing color intensity
+        const timeBonusValue = Math.round(this.timeBonus);
+        const bonusPercentage = this.timeBonus / CONFIG.timeBonus.maxBonus;
+
+        // Color transitions from green (high) to yellow (medium) to red (low)
+        let bonusColor;
+        if (bonusPercentage > 0.6) {
+            bonusColor = '#00FF00'; // Green
+        } else if (bonusPercentage > 0.3) {
+            bonusColor = '#FFFF00'; // Yellow
+        } else {
+            bonusColor = '#FF6600'; // Orange-red
+        }
+
+        this.ctx.fillStyle = bonusColor;
+        this.ctx.font = 'bold 18px "Courier New"';
+        this.ctx.fillText(`Time Bonus: ${timeBonusValue}`, 20, 58);
+
+        // Add a small progress bar
+        const barWidth = 150;
+        const barHeight = 8;
+        const barX = 200;
+        const barY = 48;
+
+        // Background bar
+        this.ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+        this.ctx.fillRect(barX, barY, barWidth, barHeight);
+
+        // Bonus bar
+        this.ctx.fillStyle = bonusColor;
+        this.ctx.fillRect(barX, barY, barWidth * bonusPercentage, barHeight);
+
+        // Border
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(barX, barY, barWidth, barHeight);
     }
 
     drawCharacterSelectScreen() {
@@ -948,19 +1019,49 @@ class Game {
             this.ctx.scale(scale, scale);
         }
 
-        // Hair
+        // Hair with special styling
         this.ctx.fillStyle = president.hair;
-        this.ctx.fillRect(4, 2, 24, 8);
-        this.ctx.fillRect(0, 4, 6, 6);
+        if (president.features === 'distinctive-hair') {
+            // Trump's distinctive hair style
+            this.ctx.fillRect(2, 2, 28, 7);
+            this.ctx.fillRect(0, 3, 4, 5);
+            this.ctx.fillRect(22, 1, 8, 3);
+        } else {
+            // Normal hair
+            this.ctx.fillRect(4, 2, 24, 8);
+            this.ctx.fillRect(0, 4, 6, 6);
+        }
 
         // Face
         this.ctx.fillStyle = president.face;
         this.ctx.fillRect(8, 8, 16, 12);
 
+        // Add wrinkles for Biden
+        if (president.features === 'wrinkles') {
+            this.ctx.strokeStyle = 'rgba(139, 90, 43, 0.4)';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(9, 9);
+            this.ctx.lineTo(23, 9);
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(7, 14);
+            this.ctx.lineTo(10, 14);
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(22, 14);
+            this.ctx.lineTo(25, 14);
+            this.ctx.stroke();
+        }
+
         // Eyes
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(10, 12, 3, 3);
         this.ctx.fillRect(19, 12, 3, 3);
+
+        // Mouth
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.fillRect(13, 17, 6, 1);
 
         // Suit
         this.ctx.fillStyle = president.suit;
@@ -1110,10 +1211,15 @@ class Player {
         this.animationTimer = 0;
         this.character = character || PRESIDENTS[1]; // Default to Trump if not specified
         this.flashTimer = 0; // For flash effect when collecting stars
+        this.damageFlashTimer = 0; // For red flash effect when taking damage
     }
 
     flash() {
         this.flashTimer = CONFIG.star.flashDuration;
+    }
+
+    damageFlash() {
+        this.damageFlashTimer = 30; // Flash for 0.5 seconds at 60fps
     }
 
     update(keys, platforms) {
@@ -1168,9 +1274,12 @@ class Player {
             this.animationFrame = 0;
         }
 
-        // Update flash timer
+        // Update flash timers
         if (this.flashTimer > 0) {
             this.flashTimer--;
+        }
+        if (this.damageFlashTimer > 0) {
+            this.damageFlashTimer--;
         }
     }
 
@@ -1192,8 +1301,18 @@ class Player {
         // Draw 8-bit president character
         ctx.save();
 
-        // Apply flash effect if active
-        if (this.flashTimer > 0 && Math.floor(this.flashTimer / 5) % 2 === 0) {
+        // Apply damage flash effect if active (red flash with red tint)
+        if (this.damageFlashTimer > 0) {
+            ctx.shadowColor = '#FF0000';
+            ctx.shadowBlur = 25;
+            // Add red tint overlay
+            if (Math.floor(this.damageFlashTimer / 3) % 2 === 0) {
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            }
+        }
+        // Apply collection flash effect if active (gold flash)
+        else if (this.flashTimer > 0 && Math.floor(this.flashTimer / 5) % 2 === 0) {
             ctx.globalAlpha = 0.5;
             ctx.shadowColor = '#FFD700';
             ctx.shadowBlur = 15;
@@ -1207,19 +1326,58 @@ class Player {
             ctx.translate(this.x, this.y);
         }
 
-        // Hair
+        // Draw red flash background when taking damage
+        if (this.damageFlashTimer > 0 && Math.floor(this.damageFlashTimer / 3) % 2 === 0) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+            ctx.fillRect(-2, -2, this.width + 4, this.height + 4);
+        }
+
+        // Hair with special styling
         ctx.fillStyle = this.character.hair;
-        ctx.fillRect(4, 2, 24, 8);
-        ctx.fillRect(0, 4, 6, 6);
+        if (this.character.features === 'distinctive-hair') {
+            // Trump's distinctive hair style - swept back
+            ctx.fillRect(2, 2, 28, 7);
+            ctx.fillRect(0, 3, 4, 5);
+            // Hair swoosh
+            ctx.fillRect(22, 1, 8, 3);
+        } else {
+            // Normal hair
+            ctx.fillRect(4, 2, 24, 8);
+            ctx.fillRect(0, 4, 6, 6);
+        }
 
         // Face
         ctx.fillStyle = this.character.face;
         ctx.fillRect(8, 8, 16, 12);
 
+        // Add wrinkles for Biden
+        if (this.character.features === 'wrinkles') {
+            ctx.strokeStyle = 'rgba(139, 90, 43, 0.4)';
+            ctx.lineWidth = 1;
+            // Forehead wrinkles
+            ctx.beginPath();
+            ctx.moveTo(9, 9);
+            ctx.lineTo(23, 9);
+            ctx.stroke();
+            // Eye wrinkles
+            ctx.beginPath();
+            ctx.moveTo(7, 14);
+            ctx.lineTo(10, 14);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(22, 14);
+            ctx.lineTo(25, 14);
+            ctx.stroke();
+        }
+
         // Eyes
         ctx.fillStyle = '#000000';
         ctx.fillRect(10, 12, 3, 3);
         ctx.fillRect(19, 12, 3, 3);
+
+        // Add smile/mouth for more character
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(13, 17, 6, 1);
 
         // Suit
         ctx.fillStyle = this.character.suit;
@@ -1537,10 +1695,10 @@ window.addEventListener('load', () => {
 
 // ==================== DEBUG PANEL ====================
 const DEFAULT_VALUES = {
-    playerSpeed: 5,
-    jumpForce: 12,
-    gravity: 0.5,
-    maxFallSpeed: 15,
+    playerSpeed: 7,
+    jumpForce: 15,
+    gravity: 0.8,
+    maxFallSpeed: 13,
     playerWidth: 32,
     playerHeight: 32,
     enemySpeed: 2
